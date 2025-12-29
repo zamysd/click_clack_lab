@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Lato-Lato Lab</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <!-- Ammo.js script (non-module) -->
+    <script src="https://kripken.github.io/ammo.js/builds/ammo.wasm.js"></script>
+</head>
+
+<body>
+    <div id="container"></div>
+
+    <div id="gui-overlay">
+        <h1>Lato-Lato Lab</h1>
+        <div class="controls">
+            <div class="control-group">
+                <label for="experimentMode">Mode Eksperimen:</label>
+                <select id="experimentMode">
+                    <option value="clickclack">Lato-Lato (Click Clack)</option>
+                    <option value="pendulum">Pendulum (Bandul)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="releaseAngle">Sudut Bola merah (deg): <span id="angleVal">45</span></label>
+                <input type="range" id="releaseAngle" min="0" max="90" value="45">
+            </div>
+
+            <button id="resetBtn">Reset Experiment</button>
+            <button id="startBtn">Lepaskan Bola</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="label">Kecepatan Bola Merah:</span>
+                <span id="vel1" class="value">0.00 m/s</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Kecepatan Bola Biru</span>
+                <span id="vel2" class="value">0.00 m/s</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Energi:</span>
+                <span id="energy" class="value">0.00 J</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <p><strong>Instructions:</strong> Atur Sudut bola merah, kemudian pencet tombol "Lepaskan Bola", amati
+                kecepatan, energi, dan momentum.</p>
+        </div>
+
+        <div class="footer">
+            Made with ❤️ by Aini Arisanti
+        </div>
+    </div>
+
+    <!-- Main Application Script -->
+    <script type="module" src="./app.js"></script>
+</body>
+
+</html>
