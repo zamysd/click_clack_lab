@@ -33,7 +33,7 @@ let hinge1, hinge2; // The constraints
 // Simulation State
 let isSimulating = false;
 let releaseAngle = 45;
-let currentMode = 'clickclack'; // 'clickclack' or 'pendulum'
+let currentMode = 'clickclack'; // 'clickclack' or 'newton5'
 
 // UI Elements
 const ui = {
@@ -42,9 +42,14 @@ const ui = {
     vel1: document.getElementById('vel1'),
     vel2: document.getElementById('vel2'),
     energy: document.getElementById('energy'),
+    vel2: document.getElementById('vel2'),
+    energy: document.getElementById('energy'),
     resetBtn: document.getElementById('resetBtn'),
+    pauseBtn: document.getElementById('pauseBtn'),
     startBtn: document.getElementById('startBtn'),
-    experimentMode: document.getElementById('experimentMode')
+    experimentMode: document.getElementById('experimentMode'),
+    ballCountGroup: document.getElementById('ballCountGroup'),
+    ballCount: document.getElementById('ballCount')
 };
 
 // --- Ammo.js Initialization ---
@@ -134,7 +139,11 @@ function createObjects() {
 
     // --- The Anchor Bar ---
     // We can destroy and recreate, or keep. Let's recreate to be clean.
-    const barGeo = new THREE.BoxGeometry(10, 0.5, 0.5);
+    let barWidth = 10;
+    if (currentMode === 'newton5') {
+        barWidth = 16;
+    }
+    const barGeo = new THREE.BoxGeometry(barWidth, 0.5, 0.5);
     const barMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
     const bar = new THREE.Mesh(barGeo, barMat);
     bar.position.set(0, 0, 0);
@@ -143,10 +152,10 @@ function createObjects() {
     sceneryList.push(bar);
     sceneryList.push(gridHelper);
 
-    if (currentMode === 'clickclack') {
-        createClickClackObjects();
+    if (currentMode === 'newton5') {
+        createNewton5Objects();
     } else {
-        createPendulumObjects();
+        createClickClackObjects();
     }
 }
 
@@ -206,6 +215,17 @@ function clearScene() {
     ball2 = null;
 }
 
+function createNewton5Objects() {
+    const spacing = (CONFIG.ballRadius * 2) + CONFIG.ballGap;
+
+    // Create 5 balls
+    ball1 = createPendulum(new THREE.Vector3(-spacing * 2, 0, 0), new THREE.Vector3(-spacing * 2, -CONFIG.stringLength, 0), 0xFF0000, "Ball1");
+    createPendulum(new THREE.Vector3(-spacing, 0, 0), new THREE.Vector3(-spacing, -CONFIG.stringLength, 0), 0x00FF00, "Ball2");
+    createPendulum(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -CONFIG.stringLength, 0), 0x0000FF, "Ball3");
+    createPendulum(new THREE.Vector3(spacing, 0, 0), new THREE.Vector3(spacing, -CONFIG.stringLength, 0), 0xFFFF00, "Ball4");
+    ball2 = createPendulum(new THREE.Vector3(spacing * 2, 0, 0), new THREE.Vector3(spacing * 2, -CONFIG.stringLength, 0), 0xFF00FF, "Ball5");
+}
+
 function createClickClackObjects() {
     const pivotPos = new THREE.Vector3(0, 0, 0);
     const startXOffset = CONFIG.ballRadius + CONFIG.ballGap;
@@ -215,13 +235,6 @@ function createClickClackObjects() {
 
     // Create Ball 2 (Right)
     ball2 = createPendulum(pivotPos, new THREE.Vector3(startXOffset, -CONFIG.stringLength, 0), 0x0000FF, "Right");
-}
-
-function createPendulumObjects() {
-    const pivotPos = new THREE.Vector3(0, 0, 0);
-    // Center single ball
-    ball1 = createPendulum(pivotPos, new THREE.Vector3(0, -CONFIG.stringLength, 0), 0xFF0000, "Center");
-    ball2 = null; // No second ball
 }
 
 function createPendulum(pivotVec3, startVec3, color, name) {
@@ -317,12 +330,24 @@ function setupUI() {
         startSimulation();
     });
 
+    ui.pauseBtn.addEventListener('click', () => {
+        if (ball1) {
+            isSimulating = !isSimulating;
+            ui.pauseBtn.textContent = isSimulating ? "Pause" : "Resume";
+        }
+    });
+
     ui.resetBtn.addEventListener('click', () => {
         resetSimulation();
     });
 
     ui.experimentMode.addEventListener('change', (e) => {
         currentMode = e.target.value;
+        if (currentMode === 'newton5') {
+            ui.ballCountGroup.style.display = 'block';
+        } else {
+            ui.ballCountGroup.style.display = 'none';
+        }
         resetSimulation();
         createObjects(); // Recreate scene for new mode
     });
@@ -330,6 +355,7 @@ function setupUI() {
 
 function resetSimulation() {
     isSimulating = false;
+    ui.pauseBtn.textContent = "Pause";
 
     syncList.forEach(obj => {
         const body = obj.body;
@@ -374,34 +400,34 @@ function resetSimulation() {
 function startSimulation() {
     resetSimulation();
 
-    // Apply initial angle to Left Ball (ball1)
     const rad = releaseAngle * Math.PI / 180;
 
-    const obj = ball1; // Left ball
-    const body = obj.body;
+    let ballsToRelease = 1;
+    if (currentMode === 'newton5') {
+        ballsToRelease = parseInt(ui.ballCount.value, 10);
+    }
 
-    // Current pivot pos
-    const pivot = obj.pivotPos;
+    for (let i = 0; i < ballsToRelease; i++) {
+        const obj = syncList[i]; // Start from the leftmost ball
+        if (!obj) break;
 
-    const newX = pivot.x - CONFIG.stringLength * Math.sin(rad);
-    const newY = pivot.y - CONFIG.stringLength * Math.cos(rad);
-    const newZ = obj.pivotPos.z;
+        const body = obj.body;
+        const pivot = obj.pivotPos;
 
-    const newTrans = new Ammo.btTransform();
-    newTrans.setIdentity();
-    newTrans.setOrigin(new Ammo.btVector3(newX, newY, newZ));
+        const newX = pivot.x - CONFIG.stringLength * Math.sin(rad);
+        const newY = pivot.y - CONFIG.stringLength * Math.cos(rad);
+        const newZ = pivot.z;
 
-    body.setWorldTransform(newTrans);
-    body.getMotionState().setWorldTransform(newTrans);
+        const newTrans = new Ammo.btTransform();
+        newTrans.setIdentity();
+        newTrans.setOrigin(new Ammo.btVector3(newX, newY, newZ));
 
-    // Activate
-    body.setActivationState(1); // ACTIVE
+        body.setWorldTransform(newTrans);
+        body.getMotionState().setWorldTransform(newTrans);
 
-    // If Click-Clack mode, we might want to mirror this to the other ball if we want symmetric start?
-    // The user said "Release Ball" (singular) but in Click Clack usually you pull both?
-    // The current UI says "Sudut Bola merah (deg)" which implies only Red (Left) ball.
-    // So we only move ball1. Ball 2 stays hanging until hit.
-    // That matches current "Newton's Cradle" style interaction.
+        // Activate
+        body.setActivationState(1); // ACTIVE
+    }
 
     isSimulating = true;
 }
@@ -456,17 +482,12 @@ function animate() {
                 const v = body.getLinearVelocity();
                 const speed = v.length();
                 ui.vel1.textContent = speed.toFixed(2) + ' m/s';
-            } else if (i === 1) {
+            } else if (i === syncList.length - 1 && syncList.length > 1) {
                 const v = body.getLinearVelocity();
                 const speed = v.length();
                 ui.vel2.textContent = speed.toFixed(2) + ' m/s';
             }
         }
-    }
-
-    // Update unused velocity slot if in pendulum mode
-    if (currentMode === 'pendulum') {
-        ui.vel2.textContent = "-";
     }
 
     let totalE = 0;
