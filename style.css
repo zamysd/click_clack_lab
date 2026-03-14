@@ -1,96 +1,245 @@
 body {
     margin: 0;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
-    background-color: #000;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #0d0d12;
+    color: #e0e0e0;
 }
 
 #container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
-    display: block;
+    z-index: 1;
 }
 
-#gui-overlay {
+/* Glassmorphism utility */
+.glass-panel {
+    background: rgba(20, 20, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Floating Action Bar */
+#action-bar {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 300px;
-    max-width: 90vw;
-    /* Prevent overflow on small screens */
-    background: rgba(255, 255, 255, 0.9);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 15px;
+    padding: 12px 24px;
+    border-radius: 40px;
+    align-items: center;
 }
 
-h1 {
-    margin-top: 0;
+/* Icons & Buttons */
+.icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
     font-size: 1.4rem;
-    color: #2c3e50;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    outline: none;
+    padding: 0;
 }
 
+.icon-btn.small-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+}
+
+.icon-btn:active {
+    transform: scale(0.9);
+}
+
+.icon-btn.primary {
+    background: rgba(46, 204, 113, 0.8);
+    border-color: rgba(46, 204, 113, 1);
+    width: 60px;
+    height: 60px;
+    font-size: 1.8rem;
+}
+
+.icon-btn.primary:hover {
+    background: rgba(46, 204, 113, 1);
+    transform: scale(1.15);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+}
+
+/* Floating Toggle */
+.floating-toggle {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    z-index: 10;
+}
+
+/* Settings Panel (Desktop default: Right side slide) */
+.slide-panel {
+    position: absolute;
+    top: 25px;
+    right: -400px;
+    /* Hidden initially */
+    width: 340px;
+    height: calc(100vh - 50px);
+    max-height: 800px;
+    /* Sensible max height */
+    border-radius: 20px;
+    z-index: 20;
+    transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+body.panel-open .slide-panel {
+    right: 25px;
+}
+
+/* Hide toggle when panel is open */
+body.panel-open .floating-toggle {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+    transition: all 0.3s;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 20px 20px 0 0;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #f0f0f0;
+    letter-spacing: 0.5px;
+}
+
+.panel-content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    /* Take remaining height */
+}
+
+/* Custom Webkit scrollbar limited to the panel content */
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* Form Controls */
 .control-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: #b0b0b0;
     font-weight: 600;
-    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-input[type=range] {
+.sleek-input {
     width: 100%;
-    cursor: pointer;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    background-color: #3498db;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
 }
 
-button:hover {
-    background-color: #2980b9;
+.sleek-input:focus {
+    border-color: rgba(46, 204, 113, 0.8);
 }
 
-button#resetBtn {
-    background-color: #e74c3c;
+.sleek-input option {
+    background: #222;
+}
+
+.sleek-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.15);
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
     margin-top: 5px;
 }
 
-button#resetBtn:hover {
-    background-color: #c0392b;
+.sleek-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #2ecc71;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.1s;
 }
 
-.stats {
-    margin-top: 20px;
-    background: #f8f9fa;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #eee;
+.sleek-slider::-webkit-slider-thumb:active {
+    transform: scale(1.2);
+}
+
+/* Stats */
+#main-stats {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    z-index: 10;
+    background: rgba(20, 20, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    padding: 16px;
+    min-width: 200px;
 }
 
 .stat-item {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 5px;
+    margin-bottom: 12px;
     font-size: 0.9rem;
 }
 
@@ -98,38 +247,91 @@ button#resetBtn:hover {
     margin-bottom: 0;
 }
 
-.instructions {
-    margin-top: 15px;
-    font-size: 0.8rem;
-    color: #666;
-    line-height: 1.4;
+.stat-item .label {
+    color: #999;
 }
 
-.footer {
-    margin-top: 15px;
-    font-size: 0.8rem;
+.stat-item .value {
+    color: #2ecc71;
+    font-weight: 600;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+}
+
+.instructions {
+    margin-top: 30px;
+    font-size: 0.85rem;
     color: #888;
     text-align: center;
-    border-top: 1px solid #eee;
-    padding-top: 10px;
+    line-height: 1.6;
 }
 
+.footer-text {
+    margin-top: 15px;
+    font-size: 0.75rem;
+    color: #555;
+    letter-spacing: 0.5px;
+}
+
+/* MOBILE LAYOUT */
 @media (max-width: 600px) {
-    #gui-overlay {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        width: auto;
-        max-width: none;
-        padding: 15px;
+
+    /* Bottom sheet for mobile */
+    .slide-panel {
+        top: auto;
+        bottom: -100%;
+        /* Hidden */
+        right: 0;
+        left: 0;
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        /* Don't cover entire screen */
+        border-radius: 24px 24px 0 0;
+        transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1);
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        box-sizing: border-box;
     }
 
-    h1 {
-        font-size: 1.2rem;
-        margin-bottom: 15px;
+    body.panel-open .slide-panel {
+        bottom: 0;
+        right: 0;
     }
 
-    .stat-item {
+    #action-bar {
+        bottom: 25px;
+        padding: 10px 20px;
+        transition: opacity 0.3s, transform 0.3s;
+    }
+
+    /* Hide action bar when panel is open */
+    body.panel-open #action-bar {
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, 20px);
+    }
+
+    #main-stats {
+        top: 20px;
+        left: 15px;
+        padding: 12px;
+        min-width: 160px;
+    }
+
+    #main-stats .stat-item {
         font-size: 0.8rem;
+        margin-bottom: 8px;
+    }
+
+    #main-stats .stat-item .value {
+        font-size: 0.9rem;
+    }
+
+    .floating-toggle {
+        top: 20px;
+        right: 15px;
+        width: 44px;
+        height: 44px;
     }
 }
