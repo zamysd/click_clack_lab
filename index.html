@@ -22,57 +22,66 @@
 <body>
     <div id="container"></div>
 
-    <div id="gui-overlay">
-        <h1>Lato-Lato Lab</h1>
-        <div class="controls">
+    <!-- Floating Action Bar -->
+    <div id="action-bar" class="glass-panel">
+        <button id="resetBtn" class="icon-btn" title="Reset (Ulangi)">🔄</button>
+        <button id="pauseBtn" class="icon-btn" title="Pause / Resume">⏸️</button>
+        <button id="startBtn" class="icon-btn primary" title="Lepaskan Bola">▶️</button>
+    </div>
+
+    <!-- Main Floating Stats -->
+    <div id="main-stats" class="glass-panel">
+        <div class="stat-item">
+            <span class="label">Kec. Merah:</span>
+            <span id="vel1" class="value">0.00 m/s</span>
+        </div>
+        <div class="stat-item">
+            <span class="label">Kec. Biru:</span>
+            <span id="vel2" class="value">0.00 m/s</span>
+        </div>
+        <div class="stat-item">
+            <span class="label">Energi:</span>
+            <span id="energy" class="value">0.00 J</span>
+        </div>
+    </div>
+
+    <!-- Settings Toggle -->
+    <button id="settingsToggle" class="icon-btn floating-toggle" title="Pengaturan">⚙️</button>
+
+    <!-- Slide-out Settings Panel -->
+    <div id="gui-overlay" class="glass-panel slide-panel">
+        <div class="panel-header">
+            <h2>Lab Settings</h2>
+            <button id="closeSettingsBtn" class="icon-btn small-btn">✖️</button>
+        </div>
+
+        <div class="panel-content">
             <div class="control-group">
                 <label for="experimentMode">Mode Eksperimen:</label>
-                <select id="experimentMode">
+                <select id="experimentMode" class="sleek-input">
                     <option value="clickclack">Lato-Lato (Click Clack)</option>
                     <option value="newton5">Newton's Pendulums (5 Balls)</option>
                 </select>
             </div>
             <div class="control-group">
                 <label for="releaseAngle">Sudut Bola merah (deg): <span id="angleVal">45</span></label>
-                <input type="range" id="releaseAngle" min="0" max="90" value="45">
+                <input type="range" id="releaseAngle" min="0" max="90" value="45" class="sleek-slider">
             </div>
 
             <div class="control-group" id="ballCountGroup" style="display: none;">
                 <label for="ballCount">Jumlah bola dilepaskan:</label>
-                <select id="ballCount">
+                <select id="ballCount" class="sleek-input">
                     <option value="1">1 Bola</option>
                     <option value="2">2 Bola</option>
                     <option value="3">3 Bola</option>
+                    <option value="4">4 Bola</option>
                 </select>
             </div>
 
-            <button id="resetBtn">Reset Experiment</button>
-            <button id="pauseBtn">Pause</button>
-            <button id="startBtn">Lepaskan Bola</button>
-        </div>
-
-        <div class="stats">
-            <div class="stat-item">
-                <span class="label">Kecepatan Bola Merah:</span>
-                <span id="vel1" class="value">0.00 m/s</span>
+            <div class="instructions">
+                <p>Atur sudut bola, lalu tekan "▶️" di bawah layar untuk melepaskan. Gunakan ⚙️ untuk pengaturan.</p>
+                <div class="footer-text">Made with ❤️ by Aini Arisanti</div>
             </div>
-            <div class="stat-item">
-                <span class="label">Kecepatan Bola Biru</span>
-                <span id="vel2" class="value">0.00 m/s</span>
-            </div>
-            <div class="stat-item">
-                <span class="label">Energi:</span>
-                <span id="energy" class="value">0.00 J</span>
-            </div>
-        </div>
-
-        <div class="instructions">
-            <p><strong>Instructions:</strong> Atur Sudut bola merah, kemudian pencet tombol "Lepaskan Bola", amati
-                kecepatan, energi, dan momentum.</p>
-        </div>
-
-        <div class="footer">
-            Made with ❤️ by Aini Arisanti
         </div>
     </div>
 
