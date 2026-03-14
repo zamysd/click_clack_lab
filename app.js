@@ -29,6 +29,10 @@ let ball1, ball2; // The two rigid bodies
 let anchor1, anchor2; // The fixed points (visual or physical)
 let hinge1, hinge2; // The constraints
 
+// Audio
+let audioListener;
+let clickSound;
+
 // Simulation State
 // Simulation State
 let isSimulating = false;
@@ -49,7 +53,9 @@ const ui = {
     startBtn: document.getElementById('startBtn'),
     experimentMode: document.getElementById('experimentMode'),
     ballCountGroup: document.getElementById('ballCountGroup'),
-    ballCount: document.getElementById('ballCount')
+    ballCount: document.getElementById('ballCount'),
+    settingsToggle: document.getElementById('settingsToggle'),
+    closeSettingsBtn: document.getElementById('closeSettingsBtn')
 };
 
 // --- Ammo.js Initialization ---
@@ -74,7 +80,7 @@ function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x222222);
 
-    camera = new THREE.PerspectiveCamera(CONFIG.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(CONFIG.fov, container.clientWidth / container.clientHeight, 0.1, 1000);
     camera.position.set(0, 5, 25);
     camera.lookAt(0, -CONFIG.stringLength / 2, 0);
 
@@ -94,7 +100,7 @@ function init() {
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
@@ -108,6 +114,9 @@ function init() {
 
     // 3. Create Objects (based on default mode)
     createObjects();
+
+    // Setup Audio
+    initAudio();
 
     // 4. UI Listeners
     setupUI();
@@ -124,6 +133,18 @@ function initPhysics() {
 
     physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
     physicsWorld.setGravity(new Ammo.btVector3(0, CONFIG.gravity, 0));
+}
+
+function initAudio() {
+    audioListener = new THREE.AudioListener();
+    camera.add(audioListener);
+
+    clickSound = new THREE.Audio(audioListener);
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('click.mp3', function (buffer) {
+        clickSound.setBuffer(buffer);
+        clickSound.setVolume(0.8);
+    });
 }
 
 function createObjects() {
@@ -180,11 +201,16 @@ function clearScene() {
             if (obj.mesh.material) obj.mesh.material.dispose();
         }
 
-        // Remove String Line
-        if (obj.stringLine) {
-            scene.remove(obj.stringLine);
-            if (obj.stringLine.geometry) obj.stringLine.geometry.dispose();
-            if (obj.stringLine.material) obj.stringLine.material.dispose();
+        // Remove String Lines
+        if (obj.stringLine1) {
+            scene.remove(obj.stringLine1);
+            if (obj.stringLine1.geometry) obj.stringLine1.geometry.dispose();
+            if (obj.stringLine1.material) obj.stringLine1.material.dispose();
+        }
+        if (obj.stringLine2) {
+            scene.remove(obj.stringLine2);
+            if (obj.stringLine2.geometry) obj.stringLine2.geometry.dispose();
+            if (obj.stringLine2.material) obj.stringLine2.material.dispose();
         }
 
         // Remove Body and Constraint
@@ -284,12 +310,18 @@ function createPendulum(pivotVec3, startVec3, color, name) {
 
     physicsWorld.addConstraint(p2p);
 
-    // 4. String Visual (Line)
-    const stringMat = new THREE.LineBasicMaterial({ color: 0xffffff });
-    // Create a standalone line object we update manually
-    const globalStringGeo = new THREE.BufferGeometry();
-    const globalStringLine = new THREE.Line(globalStringGeo, stringMat);
-    scene.add(globalStringLine);
+    // 4. String Visual (V-Shape Dual Lines)
+    const stringMat = new THREE.LineBasicMaterial({ color: 0xcccccc, linewidth: 2 });
+
+    // String 1 (Front)
+    const string1Geo = new THREE.BufferGeometry();
+    const stringLine1 = new THREE.Line(string1Geo, stringMat);
+    scene.add(stringLine1);
+
+    // String 2 (Back)
+    const string2Geo = new THREE.BufferGeometry();
+    const stringLine2 = new THREE.Line(string2Geo, stringMat);
+    scene.add(stringLine2);
 
     // Sync Object
     const syncObj = {
@@ -298,7 +330,8 @@ function createPendulum(pivotVec3, startVec3, color, name) {
         pivotBody: pivotBody, // Store so we can delete
         constraint: p2p,      // Store so we can delete
         pivotPos: pivotVec3.clone(), // Store the pivot
-        stringLine: globalStringLine,
+        stringLine1: stringLine1,
+        stringLine2: stringLine2,
         name: name
     };
     syncList.push(syncObj);
@@ -333,13 +366,27 @@ function setupUI() {
     ui.pauseBtn.addEventListener('click', () => {
         if (ball1) {
             isSimulating = !isSimulating;
-            ui.pauseBtn.textContent = isSimulating ? "Pause" : "Resume";
+            ui.pauseBtn.textContent = isSimulating ? "⏸️" : "⏯️";
+            ui.pauseBtn.title = isSimulating ? "Pause" : "Resume";
         }
     });
 
     ui.resetBtn.addEventListener('click', () => {
         resetSimulation();
     });
+
+    if (ui.settingsToggle) {
+        ui.settingsToggle.addEventListener('click', () => {
+            document.body.classList.add('panel-open');
+        });
+    }
+
+    if (ui.closeSettingsBtn) {
+        ui.closeSettingsBtn.addEventListener('click', () => {
+            document.body.classList.remove('panel-open');
+        });
+    }
+
 
     ui.experimentMode.addEventListener('change', (e) => {
         currentMode = e.target.value;
@@ -355,7 +402,7 @@ function setupUI() {
 
 function resetSimulation() {
     isSimulating = false;
-    ui.pauseBtn.textContent = "Pause";
+    ui.pauseBtn.textContent = "⏸️";
 
     syncList.forEach(obj => {
         const body = obj.body;
@@ -433,9 +480,10 @@ function startSimulation() {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const container = document.getElementById('container');
+    camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(container.clientWidth, container.clientHeight);
 }
 
 function animate() {
@@ -443,9 +491,30 @@ function animate() {
 
     const deltaTime = clock.getDelta();
 
-    // Step Physics
+    // Step Physics & Audio Collision Detection
     if (physicsWorld && isSimulating) {
         physicsWorld.stepSimulation(deltaTime, 10);
+
+        // Detect high-impulse collisions for sound
+        let numManifolds = physicsWorld.getDispatcher().getNumManifolds();
+        for (let i = 0; i < numManifolds; i++) {
+            let contactManifold = physicsWorld.getDispatcher().getManifoldByIndexInternal(i);
+            let numContacts = contactManifold.getNumContacts();
+
+            for (let j = 0; j < numContacts; j++) {
+                let contactPoint = contactManifold.getContactPoint(j);
+                let impulse = contactPoint.getAppliedImpulse();
+
+                // Play metallic click sound if collision impulse is strong enough to not be resting jitter
+                if (impulse > 0.5) {
+                    if (clickSound && !clickSound.isPlaying) {
+                        // slightly randomize pitch for realism
+                        clickSound.setPlaybackRate(0.9 + Math.random() * 0.2);
+                        clickSound.play();
+                    }
+                }
+            }
+        }
     }
 
     // Sync Graphics
@@ -463,18 +532,36 @@ function animate() {
             obj.mesh.position.set(p.x(), p.y(), p.z());
             obj.mesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
 
-            // Sync String Line
-            const positions = obj.stringLine.geometry.attributes.position;
-            if (!positions) {
-                const pts = [
-                    obj.pivotPos, // Top
+            // Sync String Lines (V-Shape configuration to the anchor bar)
+            // The bar has a depth, assume Z spread is about 1.5 units from center for the two strings
+            const zSpread = 1.5;
+
+            // String 1
+            const pos1 = obj.stringLine1.geometry.attributes.position;
+            if (!pos1) {
+                const pts1 = [
+                    new THREE.Vector3(obj.pivotPos.x, obj.pivotPos.y, obj.pivotPos.z + zSpread), // Top Front
                     obj.mesh.position // Bottom
                 ];
-                obj.stringLine.geometry.setFromPoints(pts);
+                obj.stringLine1.geometry.setFromPoints(pts1);
             } else {
-                positions.setXYZ(0, obj.pivotPos.x, obj.pivotPos.y, obj.pivotPos.z);
-                positions.setXYZ(1, obj.mesh.position.x, obj.mesh.position.y, obj.mesh.position.z);
-                positions.needsUpdate = true;
+                pos1.setXYZ(0, obj.pivotPos.x, obj.pivotPos.y, obj.pivotPos.z + zSpread);
+                pos1.setXYZ(1, obj.mesh.position.x, obj.mesh.position.y, obj.mesh.position.z);
+                pos1.needsUpdate = true;
+            }
+
+            // String 2
+            const pos2 = obj.stringLine2.geometry.attributes.position;
+            if (!pos2) {
+                const pts2 = [
+                    new THREE.Vector3(obj.pivotPos.x, obj.pivotPos.y, obj.pivotPos.z - zSpread), // Top Back
+                    obj.mesh.position // Bottom
+                ];
+                obj.stringLine2.geometry.setFromPoints(pts2);
+            } else {
+                pos2.setXYZ(0, obj.pivotPos.x, obj.pivotPos.y, obj.pivotPos.z - zSpread);
+                pos2.setXYZ(1, obj.mesh.position.x, obj.mesh.position.y, obj.mesh.position.z);
+                pos2.needsUpdate = true;
             }
 
             // Update Velocity UI
